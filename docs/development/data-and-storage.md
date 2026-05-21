@@ -2,10 +2,13 @@
 
 ## 저장 대상
 
-MVP에서는 `UserDefaults`를 사용한다.
+현재 제품은 `UserDefaults`를 사용한다.
 
 - 체크 간격
 - display sleep 방지 여부
+- closed-display best-effort 여부
+- lid-closed 강제 유지 여부
+- lid-closed 세션 중 덮개 닫힘 이벤트에서 화면보호기 실행 여부
 - 자동 종료 알림 여부
 - 최근 선택 대상 저장 여부
 - 최근 선택한 bundle identifier 목록
@@ -39,7 +42,7 @@ struct AwakeTarget {
 
 ## 로그
 
-MVP에서는 파일 로그를 만들지 않는다. 개발 중에는 `os.Logger`를 사용한다. 후속 버전에서 세션 히스토리가 필요하면 JSON 로그 또는 SQLite를 검토한다.
+현재 제품은 파일 로그를 만들지 않는다. 개발 중에는 `os.Logger`를 사용한다. 세션 히스토리가 필요하면 JSON 로그 또는 SQLite를 검토한다.
 
 ## 개인정보 원칙
 

@@ -23,13 +23,19 @@ struct AwakeTarget: Hashable {
 
 struct AwakeSettings {
     var preventDisplaySleep: Bool
+    var supportClosedDisplayMode: Bool
+    var forceLidClosedAwake: Bool
+    var lockScreenForLidClosedAwake: Bool
     var showCompletionNotification: Bool
     var launchAtLogin: Bool
 
     static let monitorInterval: TimeInterval = 5
 
     static let defaults = AwakeSettings(
-        preventDisplaySleep: false,
+        preventDisplaySleep: true,
+        supportClosedDisplayMode: true,
+        forceLidClosedAwake: true,
+        lockScreenForLidClosedAwake: true,
         showCompletionNotification: true,
         launchAtLogin: false
     )

@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let notificationController = NotificationController()
     private lazy var sessionController = SessionController(
         powerController: PowerAssertionController(),
+        lidClosedSleepController: LidClosedSleepController(),
+        screenLockController: ScreenLockController(),
         processMonitor: ProcessMonitor(),
         settingsStore: settingsStore
     )
@@ -101,6 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
         menu.addItem(withTitle: "Settings...", action: #selector(showSettingsAction), keyEquivalent: ",")
+        menu.addItem(withTitle: "Restore macOS Sleep", action: #selector(restoreSystemSleepAction), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Awake", action: #selector(quitAction), keyEquivalent: "q")
 
@@ -131,13 +134,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(
                 settingsStore: settingsStore,
-                loginItemController: loginItemController
+                loginItemController: loginItemController,
+                onPowerSettingsChanged: { [weak self] in
+                    self?.sessionController.refreshPowerSettings()
+                }
             )
         }
         settingsWindowController?.showWindow(nil)
     }
 
+    @objc private func restoreSystemSleepAction() {
+        do {
+            try sessionController.restoreSystemSleep()
+            rebuildMenu()
+        } catch {
+            showErrorAlert(
+                title: "Could not restore macOS sleep",
+                message: error.localizedDescription
+            )
+        }
+    }
+
     @objc private func quitAction() {
         NSApp.terminate(nil)
+    }
+
+    private func showErrorAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }

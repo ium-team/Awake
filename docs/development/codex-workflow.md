@@ -4,7 +4,7 @@
 
 작업 전에 관련 문서를 읽는다.
 
-- 제품 동작: `docs/mvp-spec.md`
+- 제품 동작: `docs/product-spec.md`
 - 아키텍처: `docs/development/architecture.md`
 - 전원 관리: `docs/development/power-management.md`
 - 윈도우 선택: `docs/development/window-selection.md`

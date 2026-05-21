@@ -5,14 +5,20 @@ import SwiftUI
 final class SettingsWindowController: NSWindowController {
     private let settingsStore: SettingsStore
     private let loginItemController: LoginItemController
+    private let onPowerSettingsChanged: () -> Void
     private var hostingView: NSHostingView<AwakeSettingsView>?
 
-    init(settingsStore: SettingsStore, loginItemController: LoginItemController) {
+    init(
+        settingsStore: SettingsStore,
+        loginItemController: LoginItemController,
+        onPowerSettingsChanged: @escaping () -> Void
+    ) {
         self.settingsStore = settingsStore
         self.loginItemController = loginItemController
+        self.onPowerSettingsChanged = onPowerSettingsChanged
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 360),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -53,6 +59,7 @@ final class SettingsWindowController: NSWindowController {
         AwakeSettingsView(
             settingsStore: settingsStore,
             loginItemController: loginItemController,
+            onPowerSettingsChanged: onPowerSettingsChanged,
             onLoginItemError: { [weak self] error in
                 self?.showLoginItemError(error)
             }
@@ -72,15 +79,20 @@ final class SettingsWindowController: NSWindowController {
 private struct AwakeSettingsView: View {
     private let settingsStore: SettingsStore
     private let loginItemController: LoginItemController
+    private let onPowerSettingsChanged: () -> Void
     private let onLoginItemError: (Error) -> Void
 
     @State private var preventDisplaySleep: Bool
+    @State private var supportClosedDisplayMode: Bool
+    @State private var forceLidClosedAwake: Bool
+    @State private var lockScreenForLidClosedAwake: Bool
     @State private var showCompletionNotification: Bool
     @State private var launchAtLogin: Bool
 
     init(
         settingsStore: SettingsStore,
         loginItemController: LoginItemController,
+        onPowerSettingsChanged: @escaping () -> Void,
         onLoginItemError: @escaping (Error) -> Void
     ) {
         let settings = settingsStore.settings
@@ -88,8 +100,12 @@ private struct AwakeSettingsView: View {
 
         self.settingsStore = settingsStore
         self.loginItemController = loginItemController
+        self.onPowerSettingsChanged = onPowerSettingsChanged
         self.onLoginItemError = onLoginItemError
         _preventDisplaySleep = State(initialValue: settings.preventDisplaySleep)
+        _supportClosedDisplayMode = State(initialValue: settings.supportClosedDisplayMode)
+        _forceLidClosedAwake = State(initialValue: settings.forceLidClosedAwake)
+        _lockScreenForLidClosedAwake = State(initialValue: settings.lockScreenForLidClosedAwake)
         _showCompletionNotification = State(initialValue: settings.showCompletionNotification)
         _launchAtLogin = State(initialValue: launchAtLogin)
 
@@ -108,6 +124,32 @@ private struct AwakeSettingsView: View {
                         var settings = settingsStore.settings
                         settings.preventDisplaySleep = newValue
                         settingsStore.settings = settings
+                        onPowerSettingsChanged()
+                    }
+
+                Toggle("Best-effort closed-display support", isOn: $supportClosedDisplayMode)
+                    .disabled(!preventDisplaySleep)
+                    .onChange(of: supportClosedDisplayMode) { newValue in
+                        var settings = settingsStore.settings
+                        settings.supportClosedDisplayMode = newValue
+                        settingsStore.settings = settings
+                        onPowerSettingsChanged()
+                    }
+
+                Toggle("Keep awake when lid is closed", isOn: $forceLidClosedAwake)
+                    .onChange(of: forceLidClosedAwake) { newValue in
+                        var settings = settingsStore.settings
+                        settings.forceLidClosedAwake = newValue
+                        settingsStore.settings = settings
+                        onPowerSettingsChanged()
+                    }
+
+                Toggle("Lock screen when the lid closes", isOn: $lockScreenForLidClosedAwake)
+                    .disabled(!forceLidClosedAwake)
+                    .onChange(of: lockScreenForLidClosedAwake) { newValue in
+                        var settings = settingsStore.settings
+                        settings.lockScreenForLidClosedAwake = newValue
+                        settingsStore.settings = settings
                     }
 
                 Toggle("Notify when Awake stops automatically", isOn: $showCompletionNotification)
@@ -117,7 +159,7 @@ private struct AwakeSettingsView: View {
                         settingsStore.settings = settings
                     }
 
-                Text("Lid-close behavior may vary by Mac, power, display, and managed device policy.")
+                Text("Lid-closed mode asks for administrator approval once to install a helper. The screen locks only when the lid is closed. Do not use it in a bag or confined space.")
                     .foregroundStyle(.secondary)
                     .font(.footnote)
             }
@@ -131,7 +173,7 @@ private struct AwakeSettingsView: View {
         }
         .formStyle(.grouped)
         .padding(20)
-        .frame(minWidth: 520, minHeight: 360)
+        .frame(minWidth: 600, minHeight: 500)
     }
 
     private func updateLaunchAtLogin(_ isEnabled: Bool) {
