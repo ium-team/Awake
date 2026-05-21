@@ -127,7 +127,7 @@ final class SelectionWindowController: NSWindowController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.headerView = nil
-        tableView.rowHeight = 64
+        tableView.rowHeight = 56
         tableView.intercellSpacing = NSSize(width: 0, height: 4)
         tableView.backgroundColor = .clear
         tableView.selectionHighlightStyle = .none
@@ -312,7 +312,6 @@ extension SelectionWindowController: NSTableViewDataSource, NSTableViewDelegate 
 private final class AppListCellView: NSView {
     private let appIconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
-    private let subtitleLabel = NSTextField(labelWithString: "")
     private let checkImageView = NSImageView()
 
     override init(frame frameRect: NSRect) {
@@ -325,18 +324,12 @@ private final class AppListCellView: NSView {
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        subtitleLabel.font = .systemFont(ofSize: 12)
-        subtitleLabel.textColor = .secondaryLabelColor
-        subtitleLabel.lineBreakMode = .byTruncatingTail
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-
         checkImageView.translatesAutoresizingMaskIntoConstraints = false
         checkImageView.imageScaling = .scaleProportionallyDown
         checkImageView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
 
         addSubview(appIconView)
         addSubview(titleLabel)
-        addSubview(subtitleLabel)
         addSubview(checkImageView)
 
         NSLayoutConstraint.activate([
@@ -347,11 +340,7 @@ private final class AppListCellView: NSView {
 
             titleLabel.leadingAnchor.constraint(equalTo: appIconView.trailingAnchor, constant: 12),
             titleLabel.trailingAnchor.constraint(equalTo: checkImageView.leadingAnchor, constant: -12),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 13),
-
-            subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 3),
+            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             checkImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             checkImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -367,8 +356,6 @@ private final class AppListCellView: NSView {
     func configure(app: RunningApp, isSelected: Bool) {
         appIconView.image = app.icon
         titleLabel.stringValue = app.name
-        let windowText = app.windows.isEmpty ? "No visible windows" : "\(app.windows.count) visible window\(app.windows.count == 1 ? "" : "s")"
-        subtitleLabel.stringValue = "\(windowText) - PID \(app.pid)"
         titleLabel.textColor = isSelected ? .controlAccentColor : .labelColor
         checkImageView.image = NSImage(systemSymbolName: isSelected ? "checkmark.circle.fill" : "circle", accessibilityDescription: nil)
         checkImageView.contentTintColor = isSelected ? .controlAccentColor : .tertiaryLabelColor
