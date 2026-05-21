@@ -57,7 +57,7 @@ final class SessionController {
 
     private func startTimer() {
         stopTimer()
-        timer = Timer.scheduledTimer(withTimeInterval: settingsStore.settings.monitorInterval, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: AwakeSettings.monitorInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkTargets()
             }

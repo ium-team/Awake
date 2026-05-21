@@ -3,6 +3,7 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsStore = SettingsStore()
+    private let loginItemController = LoginItemController()
     private let appProvider = RunningAppProvider()
     private let notificationController = NotificationController()
     private lazy var sessionController = SessionController(
@@ -128,7 +129,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showSettingsAction() {
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController(settingsStore: settingsStore)
+            settingsWindowController = SettingsWindowController(
+                settingsStore: settingsStore,
+                loginItemController: loginItemController
+            )
         }
         settingsWindowController?.showWindow(nil)
     }

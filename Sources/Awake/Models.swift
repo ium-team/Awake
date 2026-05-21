@@ -24,12 +24,14 @@ struct AwakeTarget: Hashable {
 struct AwakeSettings {
     var preventDisplaySleep: Bool
     var showCompletionNotification: Bool
-    var monitorInterval: TimeInterval
+    var launchAtLogin: Bool
+
+    static let monitorInterval: TimeInterval = 5
 
     static let defaults = AwakeSettings(
         preventDisplaySleep: false,
         showCompletionNotification: true,
-        monitorInterval: 5
+        launchAtLogin: false
     )
 }
 
