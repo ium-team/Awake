@@ -26,7 +26,7 @@ final class SelectionWindowController: NSWindowController {
         self.onStart = onStart
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 620),
+            contentRect: NSRect(x: 0, y: 0, width: 620, height: 700),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -82,7 +82,8 @@ final class SelectionWindowController: NSWindowController {
         toolbarView.layer?.cornerRadius = 10
         toolbarView.layer?.cornerCurve = .continuous
         toolbarView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.12).cgColor
-        toolbarView.layer?.borderWidth = 0
+        toolbarView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.12).cgColor
+        toolbarView.layer?.borderWidth = 1
 
         searchField.placeholderString = "Search apps"
         searchField.target = self
@@ -115,7 +116,8 @@ final class SelectionWindowController: NSWindowController {
         footerView.layer?.cornerRadius = 12
         footerView.layer?.cornerCurve = .continuous
         footerView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.12).cgColor
-        footerView.layer?.borderWidth = 0
+        footerView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.12).cgColor
+        footerView.layer?.borderWidth = 1
 
         detailLabel.textColor = .secondaryLabelColor
         detailLabel.font = .systemFont(ofSize: 12)
@@ -134,8 +136,8 @@ final class SelectionWindowController: NSWindowController {
         tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
 
         let cardColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("card"))
-        cardColumn.width = 460
-        cardColumn.minWidth = 360
+        cardColumn.width = 560
+        cardColumn.minWidth = 460
         cardColumn.resizingMask = .autoresizingMask
         tableView.addTableColumn(cardColumn)
 
@@ -147,7 +149,8 @@ final class SelectionWindowController: NSWindowController {
         listContainerView.layer?.cornerRadius = 12
         listContainerView.layer?.cornerCurve = .continuous
         listContainerView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.10).cgColor
-        listContainerView.layer?.borderWidth = 0
+        listContainerView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.12).cgColor
+        listContainerView.layer?.borderWidth = 1
 
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
