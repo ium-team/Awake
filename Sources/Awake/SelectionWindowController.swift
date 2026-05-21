@@ -54,12 +54,12 @@ final class SelectionWindowController: NSWindowController {
     private func setupUI() {
         guard let window else { return }
 
-        backgroundView.material = .underWindowBackground
+        backgroundView.material = .windowBackground
         backgroundView.blendingMode = .behindWindow
         backgroundView.state = .active
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.wantsLayer = true
-        backgroundView.layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.16).cgColor
+        backgroundView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.22).cgColor
         window.contentView = backgroundView
 
         let contentView = backgroundView
@@ -74,15 +74,15 @@ final class SelectionWindowController: NSWindowController {
         headerSubtitleLabel.lineBreakMode = .byTruncatingTail
         headerSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        toolbarView.material = .popover
+        toolbarView.material = .sheet
         toolbarView.blendingMode = .withinWindow
         toolbarView.state = .active
         toolbarView.translatesAutoresizingMaskIntoConstraints = false
         toolbarView.wantsLayer = true
         toolbarView.layer?.cornerRadius = 10
         toolbarView.layer?.cornerCurve = .continuous
-        toolbarView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.28).cgColor
-        toolbarView.layer?.borderWidth = 1
+        toolbarView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.12).cgColor
+        toolbarView.layer?.borderWidth = 0
 
         searchField.placeholderString = "Search apps"
         searchField.target = self
@@ -107,15 +107,15 @@ final class SelectionWindowController: NSWindowController {
         startButton.controlSize = .large
         startButton.translatesAutoresizingMaskIntoConstraints = false
 
-        footerView.material = .menu
+        footerView.material = .sheet
         footerView.blendingMode = .withinWindow
         footerView.state = .active
         footerView.translatesAutoresizingMaskIntoConstraints = false
         footerView.wantsLayer = true
-        footerView.layer?.cornerRadius = 14
+        footerView.layer?.cornerRadius = 12
         footerView.layer?.cornerCurve = .continuous
-        footerView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.35).cgColor
-        footerView.layer?.borderWidth = 1
+        footerView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.12).cgColor
+        footerView.layer?.borderWidth = 0
 
         detailLabel.textColor = .secondaryLabelColor
         detailLabel.font = .systemFont(ofSize: 12)
@@ -139,15 +139,15 @@ final class SelectionWindowController: NSWindowController {
         cardColumn.resizingMask = .autoresizingMask
         tableView.addTableColumn(cardColumn)
 
-        listContainerView.material = .popover
+        listContainerView.material = .sheet
         listContainerView.blendingMode = .withinWindow
         listContainerView.state = .active
         listContainerView.translatesAutoresizingMaskIntoConstraints = false
         listContainerView.wantsLayer = true
         listContainerView.layer?.cornerRadius = 12
         listContainerView.layer?.cornerCurve = .continuous
-        listContainerView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.28).cgColor
-        listContainerView.layer?.borderWidth = 1
+        listContainerView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.10).cgColor
+        listContainerView.layer?.borderWidth = 0
 
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
@@ -392,17 +392,17 @@ private final class AppRowView: NSTableRowView {
         let color: NSColor
 
         if isAwakeSelected {
-            color = NSColor.controlAccentColor.withAlphaComponent(0.14)
+            color = NSColor.controlAccentColor.withAlphaComponent(0.12)
         } else if isHovering {
-            color = NSColor.controlAccentColor.withAlphaComponent(0.07)
+            color = NSColor.white.withAlphaComponent(0.30)
         } else {
-            color = NSColor.controlBackgroundColor.withAlphaComponent(0.24)
+            color = NSColor.white.withAlphaComponent(0.18)
         }
 
         color.setFill()
         path.fill()
 
-        NSColor.separatorColor.withAlphaComponent(isAwakeSelected ? 0.55 : 0.22).setStroke()
+        NSColor.separatorColor.withAlphaComponent(isAwakeSelected ? 0.28 : 0.08).setStroke()
         path.lineWidth = 1
         path.stroke()
     }
