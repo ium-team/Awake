@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, for example 0.1.0
+        required: true
+        type: string
+      mode:
+        description: GitHub release mode
+        required: true
+        default: draft
+        type: choice
+        options:
+          - draft
+          - prerelease
+          - latest
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Build package
+        run: scripts/package-release.sh "${{ inputs.version }}"
+
+      - name: Create or update tag
+        run: |
+          tag="v${{ inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists."
+          else
+            git tag -a "$tag" -m "Release $tag"
+            git push origin "$tag"
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${{ inputs.version }}"
+          notes_file="release-notes.md"
+          cat > "$notes_file" <<'NOTES'
+          Awake ${{ inputs.version }}
+
+          Download:
+          - Awake.zip: stable asset name for website links
+          - Awake-${{ inputs.version }}.zip: versioned archive
+
+          Website latest-download URL:
+          https://github.com/ium-team/Awake/releases/latest/download/Awake.zip
+
+          Note: This workflow build is ad-hoc signed unless Developer ID signing and notarization are configured separately.
+          NOTES
+
+          flags=()
+          case "${{ inputs.mode }}" in
+            draft) flags+=(--draft) ;;
+            prerelease) flags+=(--prerelease) ;;
+            latest) flags+=(--latest) ;;
+          esac
+
+          gh release create "$tag" \
+            dist/Awake.zip \
+            "dist/Awake-${{ inputs.version }}.zip" \
+            dist/checksums.txt \
+            --title "Awake ${{ inputs.version }}" \
+            --notes-file "$notes_file" \
+            "${flags[@]}"
