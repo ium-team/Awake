@@ -2,16 +2,22 @@ import Foundation
 import IOKit
 import IOKit.pwr_mgt
 
+@MainActor
 final class ScreenLockController {
     private static let clamshellStateChangeMessage = UInt32(0xe0034100)
 
     private var rootDomain: io_connect_t = 0
     private var notificationPort: IONotificationPortRef?
     private var notifier: io_object_t = 0
+    private var pollTimer: Timer?
     private var isMonitoring = false
+    private var hasLockedForCurrentClosure = false
 
     func startMonitoring(settings: AwakeSettings) {
         guard settings.forceLidClosedAwake, settings.lockScreenForLidClosedAwake, !isMonitoring else { return }
+        enforceImmediatePasswordRequirement()
+        isMonitoring = true
+        startPollingClamshellState()
 
         rootDomain = IOPMFindPowerManagement(mach_port_t(MACH_PORT_NULL))
         guard rootDomain != 0 else { return }
@@ -33,7 +39,9 @@ final class ScreenLockController {
                 let controller = Unmanaged<ScreenLockController>
                     .fromOpaque(refcon)
                     .takeUnretainedValue()
-                controller.handlePowerMessage(type: messageType, argument: messageArgument)
+                Task { @MainActor in
+                    controller.handlePowerMessage(type: messageType, argument: messageArgument)
+                }
             },
             refcon,
             &notifier
@@ -49,12 +57,14 @@ final class ScreenLockController {
 
         if let runLoopSource = IONotificationPortGetRunLoopSource(notificationPort)?.takeUnretainedValue() {
             CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-            isMonitoring = true
         }
     }
 
     func stopMonitoring() {
         guard isMonitoring else { return }
+        pollTimer?.invalidate()
+        pollTimer = nil
+        hasLockedForCurrentClosure = false
 
         if let notificationPort,
            let runLoopSource = IONotificationPortGetRunLoopSource(notificationPort)?.takeUnretainedValue() {
@@ -85,8 +95,66 @@ final class ScreenLockController {
         let flags = UInt(bitPattern: argument)
         guard flags & UInt(kClamshellStateBit) != 0 else { return }
 
+        lockForLidClose()
+    }
+
+    private func startPollingClamshellState() {
+        pollTimer?.invalidate()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.75, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.pollClamshellState()
+            }
+        }
+        pollTimer?.tolerance = 0.2
+        pollClamshellState()
+    }
+
+    private func pollClamshellState() {
+        guard let isClosed = readClamshellState() else { return }
+
+        if isClosed {
+            lockForLidClose()
+        } else {
+            hasLockedForCurrentClosure = false
+        }
+    }
+
+    private func lockForLidClose() {
+        guard !hasLockedForCurrentClosure else { return }
+        hasLockedForCurrentClosure = true
         enforceImmediatePasswordRequirement()
+        try? turnDisplayOff()
         try? startScreenSaver()
+    }
+
+    private func readClamshellState() -> Bool? {
+        let process = Process()
+        let outputPipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
+        process.arguments = ["-r", "-k", "AppleClamshellState", "-d", "1"]
+        process.standardOutput = outputPipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return nil
+        }
+
+        let output = String(
+            data: outputPipe.fileHandleForReading.readDataToEndOfFile(),
+            encoding: .utf8
+        ) ?? ""
+
+        if output.contains("\"AppleClamshellState\" = Yes") {
+            return true
+        }
+
+        if output.contains("\"AppleClamshellState\" = No") {
+            return false
+        }
+
+        return nil
     }
 
     private func enforceImmediatePasswordRequirement() {
@@ -113,7 +181,10 @@ final class ScreenLockController {
         try process.run()
     }
 
-    deinit {
-        stopMonitoring()
+    private func turnDisplayOff() throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        process.arguments = ["displaysleepnow"]
+        try process.run()
     }
 }
