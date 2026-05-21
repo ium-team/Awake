@@ -97,8 +97,8 @@ final class LidClosedSleepController {
         return output
             .split(separator: "\n")
             .contains { line in
-                line.trimmingCharacters(in: .whitespaces).hasPrefix("SleepDisabled")
-                    && line.split(separator: " ").last == "1"
+                let columns = line.split(whereSeparator: { $0.isWhitespace })
+                return columns.first == "SleepDisabled" && columns.last == "1"
             }
     }
 
