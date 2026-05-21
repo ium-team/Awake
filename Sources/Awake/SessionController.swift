@@ -165,14 +165,14 @@ final class SessionController {
         let elapsedMinutes = Int(Date().timeIntervalSince(session.startedAt) / 60)
         if settings.maximumLidClosedSessionMinutes > 0,
            elapsedMinutes >= settings.maximumLidClosedSessionMinutes {
-            return "Awake restored macOS sleep because the lid-closed session reached the configured time limit."
+            return L10n(language: settings.appLanguage).text(.safetyTimeLimitReached)
         }
 
         let diagnostics = lidClosedSleepController.diagnostics()
         if diagnostics.powerSource?.localizedCaseInsensitiveContains("Battery") == true,
            let batteryPercent = diagnostics.batteryPercent,
            batteryPercent <= settings.stopLidClosedSessionAtBatteryPercent {
-            return "Awake restored macOS sleep because battery reached \(batteryPercent)%."
+            return L10n(language: settings.appLanguage).format(.batteryReached, batteryPercent)
         }
 
         return nil

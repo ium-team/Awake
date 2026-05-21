@@ -13,17 +13,18 @@ final class NotificationController: NSObject, UNUserNotificationCenterDelegate {
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    func notifySessionEnded(targetCount: Int) {
+    func notifySessionEnded(targetCount: Int, language: AppLanguage) {
+        let l10n = L10n(language: language)
         notify(
-            title: "Awake stopped",
+            title: l10n.text(.awakeStopped),
             body: targetCount == 1
-                ? "The selected app finished, so Awake released the power assertion."
-                : "All selected apps finished, so Awake released the power assertion."
+                ? l10n.text(.selectedAppFinished)
+                : l10n.text(.allSelectedAppsFinished)
         )
     }
 
-    func notifySafetyStop(reason: String) {
-        notify(title: "Awake restored macOS sleep", body: reason)
+    func notifySafetyStop(reason: String, language: AppLanguage) {
+        notify(title: L10n(language: language).text(.awakeRestoredMacOSSleep), body: reason)
     }
 
     private func notify(title: String, body: String) {

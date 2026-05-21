@@ -6,6 +6,7 @@ let awakeSettingsStoreValidation: Void = {
     let store = SettingsStore(defaults: defaults)
     let settings = store.settings
 
+    precondition(settings.appLanguage == .system)
     precondition(settings.preventDisplaySleep)
     precondition(settings.supportClosedDisplayMode)
     precondition(settings.forceLidClosedAwake)
@@ -16,11 +17,13 @@ let awakeSettingsStoreValidation: Void = {
     precondition(!settings.launchAtLogin)
 
     var changedSettings = settings
+    changedSettings.appLanguage = .ko
     changedSettings.maximumLidClosedSessionMinutes = 90
     changedSettings.stopLidClosedSessionAtBatteryPercent = 35
     store.settings = changedSettings
 
     let reloadedStore = SettingsStore(defaults: defaults)
+    precondition(reloadedStore.settings.appLanguage == .ko)
     precondition(reloadedStore.settings.maximumLidClosedSessionMinutes == 90)
     precondition(reloadedStore.settings.stopLidClosedSessionAtBatteryPercent == 35)
 }()

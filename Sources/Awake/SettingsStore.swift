@@ -2,6 +2,7 @@ import Foundation
 
 final class SettingsStore {
     private enum Key {
+        static let appLanguage = "appLanguage"
         static let preventDisplaySleep = "preventDisplaySleep"
         static let supportClosedDisplayMode = "supportClosedDisplayMode"
         static let forceLidClosedAwake = "forceLidClosedAwake"
@@ -22,6 +23,7 @@ final class SettingsStore {
     var settings: AwakeSettings {
         get {
             AwakeSettings(
+                appLanguage: AppLanguage(rawValue: defaults.string(forKey: Key.appLanguage) ?? "") ?? AwakeSettings.defaults.appLanguage,
                 preventDisplaySleep: defaults.bool(forKey: Key.preventDisplaySleep),
                 supportClosedDisplayMode: defaults.bool(forKey: Key.supportClosedDisplayMode),
                 forceLidClosedAwake: defaults.bool(forKey: Key.forceLidClosedAwake),
@@ -33,6 +35,7 @@ final class SettingsStore {
             )
         }
         set {
+            defaults.set(newValue.appLanguage.rawValue, forKey: Key.appLanguage)
             defaults.set(newValue.preventDisplaySleep, forKey: Key.preventDisplaySleep)
             defaults.set(newValue.supportClosedDisplayMode, forKey: Key.supportClosedDisplayMode)
             defaults.set(newValue.forceLidClosedAwake, forKey: Key.forceLidClosedAwake)
@@ -46,6 +49,7 @@ final class SettingsStore {
 
     private func registerDefaults() {
         defaults.register(defaults: [
+            Key.appLanguage: AwakeSettings.defaults.appLanguage.rawValue,
             Key.preventDisplaySleep: AwakeSettings.defaults.preventDisplaySleep,
             Key.supportClosedDisplayMode: AwakeSettings.defaults.supportClosedDisplayMode,
             Key.forceLidClosedAwake: AwakeSettings.defaults.forceLidClosedAwake,

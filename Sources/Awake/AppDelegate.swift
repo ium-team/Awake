@@ -18,6 +18,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var selectionWindowController: SelectionWindowController?
     private var settingsWindowController: SettingsWindowController?
     private var hotKeyController: GlobalHotKeyController?
+    private var l10n: L10n {
+        L10n(language: settingsStore.settings.appLanguage)
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -49,14 +52,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sessionController.onAutoStopped = { [weak self] session in
             guard let self else { return }
             if self.settingsStore.settings.showCompletionNotification {
-                self.notificationController.notifySessionEnded(targetCount: session.targets.count)
+                self.notificationController.notifySessionEnded(
+                    targetCount: session.targets.count,
+                    language: self.settingsStore.settings.appLanguage
+                )
             }
         }
 
         sessionController.onSafetyStopped = { [weak self] reason in
             guard let self else { return }
             if self.settingsStore.settings.showCompletionNotification {
-                self.notificationController.notifySafetyStop(reason: reason)
+                self.notificationController.notifySafetyStop(
+                    reason: reason,
+                    language: self.settingsStore.settings.appLanguage
+                )
             }
             self.rebuildMenu()
         }
@@ -93,27 +102,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch sessionController.state {
         case .idle:
-            menu.addItem(withTitle: "Keep Apps Awake...", action: #selector(showSelectionWindowAction), keyEquivalent: "")
-            menu.addItem(withTitle: "Shortcut: Command-Shift-A", action: nil, keyEquivalent: "").isEnabled = false
+            menu.addItem(withTitle: l10n.text(.keepAppsAwakeTitle) + "...", action: #selector(showSelectionWindowAction), keyEquivalent: "")
+            menu.addItem(withTitle: l10n.text(.shortcutCommandShiftA), action: nil, keyEquivalent: "").isEnabled = false
         case .active(let session):
             let summary = session.targets.map(\.displayName).joined(separator: ", ")
-            let summaryItem = menu.addItem(withTitle: "Keeping \(session.targets.count) app\(session.targets.count == 1 ? "" : "s") awake", action: nil, keyEquivalent: "")
+            let summaryItem = menu.addItem(withTitle: l10n.keepingApps(count: session.targets.count), action: nil, keyEquivalent: "")
             summaryItem.isEnabled = false
             let targetItem = menu.addItem(withTitle: summary, action: nil, keyEquivalent: "")
             targetItem.isEnabled = false
             menu.addItem(.separator())
-            menu.addItem(withTitle: "Stop Keeping Awake", action: #selector(stopSessionAction), keyEquivalent: "")
+            menu.addItem(withTitle: l10n.text(.stopKeepingAwake), action: #selector(stopSessionAction), keyEquivalent: "")
         case .error(let message):
             let item = menu.addItem(withTitle: message, action: nil, keyEquivalent: "")
             item.isEnabled = false
-            menu.addItem(withTitle: "Try Again...", action: #selector(showSelectionWindowAction), keyEquivalent: "")
+            menu.addItem(withTitle: l10n.text(.tryAgain), action: #selector(showSelectionWindowAction), keyEquivalent: "")
         }
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Settings...", action: #selector(showSettingsAction), keyEquivalent: ",")
-        menu.addItem(withTitle: "Restore macOS Sleep", action: #selector(restoreSystemSleepAction), keyEquivalent: "")
+        menu.addItem(withTitle: l10n.text(.settings), action: #selector(showSettingsAction), keyEquivalent: ",")
+        menu.addItem(withTitle: l10n.text(.restoreMacOSSleep), action: #selector(restoreSystemSleepAction), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Awake", action: #selector(quitAction), keyEquivalent: "q")
+        menu.addItem(withTitle: l10n.text(.quitAwake), action: #selector(quitAction), keyEquivalent: "q")
 
         for item in menu.items {
             item.target = self
@@ -127,7 +136,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showSelectionWindow() {
         if selectionWindowController == nil {
-            selectionWindowController = SelectionWindowController(appProvider: appProvider) { [weak self] targets in
+            selectionWindowController = SelectionWindowController(appProvider: appProvider, settingsStore: settingsStore) { [weak self] targets in
                 self?.sessionController.start(targets: targets)
             }
         }
@@ -145,6 +154,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 loginItemController: loginItemController,
                 onPowerSettingsChanged: { [weak self] in
                     self?.sessionController.refreshPowerSettings()
+                },
+                onLanguageChanged: { [weak self] in
+                    self?.selectionWindowController?.refreshLanguage()
+                    self?.rebuildMenu()
                 },
                 diagnosticsProvider: { [weak self] in
                     self?.sessionController.diagnostics()
@@ -166,7 +179,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rebuildMenu()
         } catch {
             showErrorAlert(
-                title: "Could not restore macOS sleep",
+                title: l10n.text(.couldNotRestoreMacOSSleep),
                 message: error.localizedDescription
             )
         }
@@ -181,7 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: l10n.text(.ok))
         alert.runModal()
     }
 }

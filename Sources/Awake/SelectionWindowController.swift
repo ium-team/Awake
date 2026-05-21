@@ -3,6 +3,7 @@ import AppKit
 @MainActor
 final class SelectionWindowController: NSWindowController {
     private let appProvider: RunningAppProvider
+    private let settingsStore: SettingsStore
     private let onStart: ([AwakeTarget]) -> Void
     private var allApps: [RunningApp] = []
     private var filteredApps: [RunningApp] = []
@@ -21,8 +22,13 @@ final class SelectionWindowController: NSWindowController {
     private let refreshButton = NSButton(title: "", target: nil, action: nil)
     private let detailLabel = NSTextField(labelWithString: "")
 
-    init(appProvider: RunningAppProvider, onStart: @escaping ([AwakeTarget]) -> Void) {
+    private var l10n: L10n {
+        L10n(language: settingsStore.settings.appLanguage)
+    }
+
+    init(appProvider: RunningAppProvider, settingsStore: SettingsStore, onStart: @escaping ([AwakeTarget]) -> Void) {
         self.appProvider = appProvider
+        self.settingsStore = settingsStore
         self.onStart = onStart
 
         let window = NSWindow(
@@ -31,7 +37,7 @@ final class SelectionWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Keep Apps Awake"
+        window.title = L10n(language: settingsStore.settings.appLanguage).text(.keepAppsAwakeTitle)
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true
         window.center()
@@ -45,10 +51,21 @@ final class SelectionWindowController: NSWindowController {
     }
 
     override func showWindow(_ sender: Any?) {
+        refreshLanguage()
         reloadApps()
         super.showWindow(sender)
         window?.makeKeyAndOrderFront(sender)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func refreshLanguage() {
+        window?.title = l10n.text(.keepAppsAwakeTitle)
+        headerTitleLabel.stringValue = l10n.text(.keepAppsAwakeTitle)
+        headerSubtitleLabel.stringValue = l10n.text(.keepAppsAwakeSubtitle)
+        searchField.placeholderString = l10n.text(.searchApps)
+        refreshButton.toolTip = l10n.text(.refreshAppList)
+        startButton.title = l10n.text(.start)
+        updateFooter()
     }
 
     private func setupUI() {
@@ -85,7 +102,7 @@ final class SelectionWindowController: NSWindowController {
         toolbarView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.12).cgColor
         toolbarView.layer?.borderWidth = 1
 
-        searchField.placeholderString = "Search apps"
+        searchField.placeholderString = l10n.text(.searchApps)
         searchField.target = self
         searchField.action = #selector(searchChanged)
         searchField.bezelStyle = .roundedBezel
@@ -94,10 +111,10 @@ final class SelectionWindowController: NSWindowController {
 
         refreshButton.target = self
         refreshButton.action = #selector(refreshClicked)
-        refreshButton.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "Refresh")
+        refreshButton.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: l10n.text(.refresh))
         refreshButton.imagePosition = .imageOnly
         refreshButton.bezelStyle = .texturedRounded
-        refreshButton.toolTip = "Refresh app list"
+        refreshButton.toolTip = l10n.text(.refreshAppList)
         refreshButton.translatesAutoresizingMaskIntoConstraints = false
 
         startButton.target = self
@@ -240,9 +257,7 @@ final class SelectionWindowController: NSWindowController {
 
     private func updateFooter() {
         let selectedCount = selectedPIDs.count
-        detailLabel.stringValue = selectedCount == 0
-            ? "Select one or more apps."
-            : "\(selectedCount) selected. Awake stops when all selected apps quit."
+        detailLabel.stringValue = l10n.selectedFooter(count: selectedCount)
         startButton.isEnabled = selectedCount > 0
     }
 
