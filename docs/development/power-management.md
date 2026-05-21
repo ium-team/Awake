@@ -19,6 +19,8 @@ MacBook 덮개 닫힘은 일반 유휴 잠자기와 다르다. 앱 수준 assert
 
 `pmset disablesleep`은 시스템 전체 설정이며 관리자 권한이 필요하다. 매번 켜고 끌 때 비밀번호를 묻지 않도록 최초 1회 설치한 helper가 세션 신호 파일을 감시하고 복구한다. 설정이 남으면 Mac이 정상적으로 잠자기에 들어가지 않을 수 있으므로 세션 종료, 수동 종료, 앱 종료 시 신호 파일을 제거하고, 메뉴바에 수동 복구 액션을 항상 제공한다.
 
+세션 신호 파일은 현재 사용자 `~/Library/Application Support/Awake/` 아래에 둔다. `/tmp`처럼 다른 로컬 사용자가 쓸 수 있는 위치를 helper 제어 신호로 사용하지 않는다. helper는 Awake가 직접 `SleepDisabled`를 켠 경우에만 owned 파일을 남기고, owned 파일이 있을 때만 세션 종료 후 `pmset -a disablesleep 0`을 적용한다.
+
 문서와 UI에서는 다음처럼 표현한다.
 
 - "세션 동안 덮개 닫힘 sleep을 막기 위해 관리자 권한으로 macOS sleep 설정을 변경합니다."

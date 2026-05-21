@@ -1,15 +1,23 @@
 import Foundation
 
 final class LidClosedSleepController {
-    private let commandURL = URL(fileURLWithPath: "/tmp/awake-lid-closed-enabled")
+    private let supportDirectoryURL = FileManager.default
+        .homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/Application Support/Awake", isDirectory: true)
+    private lazy var commandURL = supportDirectoryURL.appendingPathComponent("lid-closed-enabled")
+    private lazy var ownedURL = supportDirectoryURL.appendingPathComponent("lid-closed-owned")
     private let helperPath = "/Library/PrivilegedHelperTools/com.awake.lid-helper.sh"
     private let daemonPath = "/Library/LaunchDaemons/com.awake.lid-helper.plist"
 
     func startIfNeeded(settings: AwakeSettings) throws {
         guard settings.forceLidClosedAwake else { return }
-        if !isHelperInstalled() {
+        if !helperInstalled {
             try installHelper()
         }
+        try FileManager.default.createDirectory(
+            at: supportDirectoryURL,
+            withIntermediateDirectories: true
+        )
         FileManager.default.createFile(atPath: commandURL.path, contents: Data())
     }
 
@@ -27,9 +35,40 @@ final class LidClosedSleepController {
 
     func restoreSystemSleep() throws {
         restoreIfNeeded()
-        if !isHelperInstalled() {
+        if !helperInstalled {
             try setSleepDisabled(false)
         }
+    }
+
+    var helperInstalled: Bool {
+        FileManager.default.fileExists(atPath: helperPath)
+            && FileManager.default.fileExists(atPath: daemonPath)
+    }
+
+    func installOrRepairHelper() throws {
+        try installHelper()
+    }
+
+    func uninstallHelper() throws {
+        restoreIfNeeded()
+        let shellCommand = """
+        /bin/launchctl bootout system \(shellQuote(daemonPath)) >/dev/null 2>&1 || true
+        /usr/bin/pmset -a disablesleep 0
+        /bin/rm -f \(shellQuote(helperPath)) \(shellQuote(daemonPath)) \(shellQuote(ownedURL.path)) /tmp/awake-lid-closed-owned /tmp/awake-lid-closed-enabled
+        """
+        let script = "do shell script \"\(escapeForAppleScript(shellCommand))\" with administrator privileges"
+        _ = try runProcess(path: "/usr/bin/osascript", arguments: ["-e", script])
+    }
+
+    func diagnostics() -> AwakeDiagnostics {
+        let battery = readBatteryState()
+        return AwakeDiagnostics(
+            helperInstalled: helperInstalled,
+            sleepDisabled: isSleepDisabled(),
+            lidClosed: readClamshellState(),
+            batteryPercent: battery.percent,
+            powerSource: battery.powerSource
+        )
     }
 
     func isSleepDisabled() -> Bool {
@@ -45,25 +84,20 @@ final class LidClosedSleepController {
             }
     }
 
-    private func isHelperInstalled() -> Bool {
-        FileManager.default.fileExists(atPath: helperPath)
-            && FileManager.default.fileExists(atPath: daemonPath)
-    }
-
     private func installHelper() throws {
         let shellCommand = """
         /bin/mkdir -p /Library/PrivilegedHelperTools
         /bin/cat > \(shellQuote(helperPath)) <<'AWAKE_HELPER'
         #!/bin/sh
-        command_file="/tmp/awake-lid-closed-enabled"
-        owned_file="/tmp/awake-lid-closed-owned"
+        command_file=\(shellQuote(commandURL.path))
+        owned_file=\(shellQuote(ownedURL.path))
 
         while true; do
           if [ -e "$command_file" ]; then
             if ! /usr/bin/pmset -g | /usr/bin/grep -q "SleepDisabled[[:space:]]*1"; then
               /usr/bin/pmset -a disablesleep 1
+              /usr/bin/touch "$owned_file"
             fi
-            /usr/bin/touch "$owned_file"
           elif [ -e "$owned_file" ]; then
             /usr/bin/pmset -a disablesleep 0
             /bin/rm -f "$owned_file"
@@ -138,6 +172,47 @@ final class LidClosedSleepController {
 
     private func shellQuote(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+    }
+
+    private func readClamshellState() -> Bool? {
+        guard let output = try? runProcess(path: "/usr/sbin/ioreg", arguments: ["-r", "-k", "AppleClamshellState", "-d", "1"]) else {
+            return nil
+        }
+
+        if output.contains("\"AppleClamshellState\" = Yes") {
+            return true
+        }
+
+        if output.contains("\"AppleClamshellState\" = No") {
+            return false
+        }
+
+        return nil
+    }
+
+    private func readBatteryState() -> (percent: Int?, powerSource: String?) {
+        guard let output = try? runProcess(path: "/usr/bin/pmset", arguments: ["-g", "batt"]) else {
+            return (nil, nil)
+        }
+
+        let powerSource = output
+            .split(separator: "\n")
+            .first?
+            .replacingOccurrences(of: "Now drawing from ", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "'"))
+
+        let percentText = output
+            .split(separator: "\n")
+            .first { $0.contains("%") }?
+            .split(separator: ";")
+            .first?
+            .split(separator: "\t")
+            .last?
+            .replacingOccurrences(of: "%", with: "")
+            .trimmingCharacters(in: .whitespaces)
+        let percent = percentText.flatMap { Int($0) }
+
+        return (percent, powerSource)
     }
 }
 

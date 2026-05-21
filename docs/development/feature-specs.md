@@ -41,6 +41,8 @@
 - closed-display best-effort assertion을 사용할지 여부
 - 관리자 권한으로 lid-closed sleep disabled 모드를 사용할지 여부
 - lid-closed 세션 중 실제 덮개 닫힘 이벤트에서 화면보호기를 실행할지 여부
+- lid-closed 세션 최대 시간과 배터리 안전 종료 기준
+- lid-closed helper 설치/복구/제거와 현재 진단 상태
 - active 세션 중 전원 관련 설정 변경 시 즉시 전원 assertion에 반영
 - 자동 종료 알림
 - 메뉴바 active 표시

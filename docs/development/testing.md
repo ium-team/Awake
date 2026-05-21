@@ -6,6 +6,9 @@
 - 중복 시작/종료 처리
 - 선택 대상이 모두 종료되었을 때 자동 종료 판단
 - 설정 기본값
+- lid-closed 안전 설정 저장/복원
+
+현재 SwiftPM 테스트 타깃은 Xcode가 없는 Command Line Tools 환경에서도 `swift test`가 통과하도록 경량 precondition 검증으로 설정 기본값과 lid-closed 안전 설정 저장을 확인한다. Xcode 기반 CI를 추가하면 XCTest 또는 Swift Testing으로 같은 검증을 확장한다.
 
 ## 통합 테스트
 

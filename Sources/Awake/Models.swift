@@ -26,6 +26,8 @@ struct AwakeSettings {
     var supportClosedDisplayMode: Bool
     var forceLidClosedAwake: Bool
     var lockScreenForLidClosedAwake: Bool
+    var maximumLidClosedSessionMinutes: Int
+    var stopLidClosedSessionAtBatteryPercent: Int
     var showCompletionNotification: Bool
     var launchAtLogin: Bool
 
@@ -36,9 +38,19 @@ struct AwakeSettings {
         supportClosedDisplayMode: true,
         forceLidClosedAwake: true,
         lockScreenForLidClosedAwake: true,
+        maximumLidClosedSessionMinutes: 240,
+        stopLidClosedSessionAtBatteryPercent: 20,
         showCompletionNotification: true,
         launchAtLogin: false
     )
+}
+
+struct AwakeDiagnostics {
+    let helperInstalled: Bool
+    let sleepDisabled: Bool
+    let lidClosed: Bool?
+    let batteryPercent: Int?
+    let powerSource: String?
 }
 
 enum SessionState: Equatable {

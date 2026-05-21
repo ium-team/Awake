@@ -19,6 +19,7 @@ final class SessionController {
 
     var onStateChanged: ((SessionState) -> Void)?
     var onAutoStopped: ((AwakeSession) -> Void)?
+    var onSafetyStopped: ((String) -> Void)?
 
     init(
         powerController: PowerAssertionController,
@@ -100,6 +101,18 @@ final class SessionController {
         lidClosedSleepController.isSleepDisabled()
     }
 
+    func diagnostics() -> AwakeDiagnostics {
+        lidClosedSleepController.diagnostics()
+    }
+
+    func installOrRepairHelper() throws {
+        try lidClosedSleepController.installOrRepairHelper()
+    }
+
+    func uninstallHelper() throws {
+        try lidClosedSleepController.uninstallHelper()
+    }
+
     private func startTimer() {
         stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: AwakeSettings.monitorInterval, repeats: true) { [weak self] _ in
@@ -121,13 +134,47 @@ final class SessionController {
             processMonitor.isRunning(pid: target.pid)
         }
 
-        guard !anyRunning else { return }
+        guard anyRunning else {
+            finishSession(session: session)
+            return
+        }
 
+        if let stopReason = safetyStopReason(for: session) {
+            stopTimer()
+            powerController.stop()
+            lidClosedSleepController.restoreIfNeeded()
+            screenLockController.stopMonitoring()
+            state = .idle
+            onSafetyStopped?(stopReason)
+        }
+    }
+
+    private func finishSession(session: AwakeSession) {
         stopTimer()
         powerController.stop()
         lidClosedSleepController.restoreIfNeeded()
         screenLockController.stopMonitoring()
         state = .idle
         onAutoStopped?(session)
+    }
+
+    private func safetyStopReason(for session: AwakeSession) -> String? {
+        let settings = settingsStore.settings
+        guard settings.forceLidClosedAwake else { return nil }
+
+        let elapsedMinutes = Int(Date().timeIntervalSince(session.startedAt) / 60)
+        if settings.maximumLidClosedSessionMinutes > 0,
+           elapsedMinutes >= settings.maximumLidClosedSessionMinutes {
+            return "Awake restored macOS sleep because the lid-closed session reached the configured time limit."
+        }
+
+        let diagnostics = lidClosedSleepController.diagnostics()
+        if diagnostics.powerSource?.localizedCaseInsensitiveContains("Battery") == true,
+           let batteryPercent = diagnostics.batteryPercent,
+           batteryPercent <= settings.stopLidClosedSessionAtBatteryPercent {
+            return "Awake restored macOS sleep because battery reached \(batteryPercent)%."
+        }
+
+        return nil
     }
 }

@@ -52,6 +52,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.notificationController.notifySessionEnded(targetCount: session.targets.count)
             }
         }
+
+        sessionController.onSafetyStopped = { [weak self] reason in
+            guard let self else { return }
+            if self.settingsStore.settings.showCompletionNotification {
+                self.notificationController.notifySafetyStop(reason: reason)
+            }
+            self.rebuildMenu()
+        }
     }
 
     private func setupHotKey() {
@@ -137,6 +145,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 loginItemController: loginItemController,
                 onPowerSettingsChanged: { [weak self] in
                     self?.sessionController.refreshPowerSettings()
+                },
+                diagnosticsProvider: { [weak self] in
+                    self?.sessionController.diagnostics()
+                },
+                onInstallOrRepairHelper: { [weak self] in
+                    try self?.sessionController.installOrRepairHelper()
+                },
+                onUninstallHelper: { [weak self] in
+                    try self?.sessionController.uninstallHelper()
                 }
             )
         }

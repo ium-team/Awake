@@ -14,14 +14,25 @@ final class NotificationController: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func notifySessionEnded(targetCount: Int) {
+        notify(
+            title: "Awake stopped",
+            body: targetCount == 1
+                ? "The selected app finished, so Awake released the power assertion."
+                : "All selected apps finished, so Awake released the power assertion."
+        )
+    }
+
+    func notifySafetyStop(reason: String) {
+        notify(title: "Awake restored macOS sleep", body: reason)
+    }
+
+    private func notify(title: String, body: String) {
         let content = UNMutableNotificationContent()
-        content.title = "Awake stopped"
-        content.body = targetCount == 1
-            ? "The selected app finished, so Awake released the power assertion."
-            : "All selected apps finished, so Awake released the power assertion."
+        content.title = title
+        content.body = body
 
         let request = UNNotificationRequest(
-            identifier: "awake.session-ended.\(UUID().uuidString)",
+            identifier: "awake.notification.\(UUID().uuidString)",
             content: content,
             trigger: nil
         )

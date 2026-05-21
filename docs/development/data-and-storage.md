@@ -9,6 +9,8 @@
 - closed-display best-effort 여부
 - lid-closed 강제 유지 여부
 - lid-closed 세션 중 덮개 닫힘 이벤트에서 화면보호기 실행 여부
+- lid-closed 세션 최대 시간
+- lid-closed 배터리 안전 종료 기준
 - 자동 종료 알림 여부
 - 최근 선택 대상 저장 여부
 - 최근 선택한 bundle identifier 목록
@@ -24,7 +26,6 @@ struct AwakeSession {
     let id: UUID
     let startedAt: Date
     let targets: [AwakeTarget]
-    let assertionMode: AssertionMode
 }
 ```
 
@@ -32,11 +33,9 @@ struct AwakeSession {
 
 ```swift
 struct AwakeTarget {
-    let kind: TargetKind
     let pid: pid_t
     let bundleIdentifier: String?
     let displayName: String
-    let windowID: UInt32?
 }
 ```
 
