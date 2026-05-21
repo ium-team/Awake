@@ -1,6 +1,10 @@
 import Foundation
 
 final class LidClosedSleepController {
+    private static let daemonLabel = "com.awake.lid-helper"
+    private static let sleepDisabledPollDeadline: TimeInterval = 6
+    private static let sleepDisabledPollInterval: TimeInterval = 0.25
+
     private let supportDirectoryURL = FileManager.default
         .homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/Awake", isDirectory: true)
@@ -11,14 +15,15 @@ final class LidClosedSleepController {
 
     func startIfNeeded(settings: AwakeSettings) throws {
         guard settings.forceLidClosedAwake else { return }
-        if !helperInstalled {
+        if !helperReady {
             try installHelper()
         }
         try FileManager.default.createDirectory(
             at: supportDirectoryURL,
             withIntermediateDirectories: true
         )
-        FileManager.default.createFile(atPath: commandURL.path, contents: Data())
+        try Data().write(to: commandURL, options: .atomic)
+        try waitForSleepDisabled(true)
     }
 
     func update(settings: AwakeSettings) throws {
@@ -35,14 +40,27 @@ final class LidClosedSleepController {
 
     func restoreSystemSleep() throws {
         restoreIfNeeded()
-        if !helperInstalled {
-            try setSleepDisabled(false)
+        if helperReady {
+            do {
+                try waitForSleepDisabled(false)
+                return
+            } catch {
+                try setSleepDisabled(false)
+                return
+            }
         }
+        try setSleepDisabled(false)
     }
 
     var helperInstalled: Bool {
         FileManager.default.fileExists(atPath: helperPath)
             && FileManager.default.fileExists(atPath: daemonPath)
+    }
+
+    private var helperReady: Bool {
+        helperInstalled
+            && helperUsesCurrentSignalFiles()
+            && helperIsLoaded()
     }
 
     func installOrRepairHelper() throws {
@@ -63,7 +81,7 @@ final class LidClosedSleepController {
     func diagnostics() -> AwakeDiagnostics {
         let battery = readBatteryState()
         return AwakeDiagnostics(
-            helperInstalled: helperInstalled,
+            helperInstalled: helperReady,
             sleepDisabled: isSleepDisabled(),
             lidClosed: readClamshellState(),
             batteryPercent: battery.percent,
@@ -80,7 +98,7 @@ final class LidClosedSleepController {
             .split(separator: "\n")
             .contains { line in
                 line.trimmingCharacters(in: .whitespaces).hasPrefix("SleepDisabled")
-                    && line.contains("1")
+                    && line.split(separator: " ").last == "1"
             }
     }
 
@@ -125,11 +143,44 @@ final class LidClosedSleepController {
         </plist>
         AWAKE_PLIST
         /bin/chmod 644 \(shellQuote(daemonPath))
+        /bin/rm -f /tmp/awake-lid-closed-owned /tmp/awake-lid-closed-enabled
         /bin/launchctl bootout system \(shellQuote(daemonPath)) >/dev/null 2>&1 || true
         /bin/launchctl bootstrap system \(shellQuote(daemonPath))
         """
         let script = "do shell script \"\(escapeForAppleScript(shellCommand))\" with administrator privileges"
         _ = try runProcess(path: "/usr/bin/osascript", arguments: ["-e", script])
+    }
+
+    private func waitForSleepDisabled(_ expectedValue: Bool) throws {
+        let deadline = Date().addingTimeInterval(Self.sleepDisabledPollDeadline)
+        while Date() < deadline {
+            if isSleepDisabled() == expectedValue {
+                return
+            }
+            Thread.sleep(forTimeInterval: Self.sleepDisabledPollInterval)
+        }
+
+        if isSleepDisabled() == expectedValue {
+            return
+        }
+
+        throw LidClosedSleepError.sleepDisabledStateTimedOut(expected: expectedValue)
+    }
+
+    private func helperUsesCurrentSignalFiles() -> Bool {
+        guard let script = try? String(contentsOfFile: helperPath, encoding: .utf8) else {
+            return false
+        }
+
+        return script.contains("command_file=\(shellQuote(commandURL.path))")
+            && script.contains("owned_file=\(shellQuote(ownedURL.path))")
+    }
+
+    private func helperIsLoaded() -> Bool {
+        (try? runProcess(
+            path: "/bin/launchctl",
+            arguments: ["print", "system/\(Self.daemonLabel)"]
+        )) != nil
     }
 
     private func setSleepDisabled(_ isDisabled: Bool) throws {
@@ -218,6 +269,7 @@ final class LidClosedSleepController {
 
 enum LidClosedSleepError: LocalizedError {
     case commandFailed(message: String)
+    case sleepDisabledStateTimedOut(expected: Bool)
 
     var errorDescription: String? {
         switch self {
@@ -227,6 +279,11 @@ enum LidClosedSleepError: LocalizedError {
                 return "Could not update macOS lid-close sleep setting."
             }
             return "Could not update macOS lid-close sleep setting. \(detail)"
+        case .sleepDisabledStateTimedOut(let expected):
+            if expected {
+                return "The lid-closed helper did not enable macOS SleepDisabled before the timeout."
+            }
+            return "The lid-closed helper did not restore macOS SleepDisabled before the timeout."
         }
     }
 }

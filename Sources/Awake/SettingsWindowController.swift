@@ -276,7 +276,7 @@ private struct AwakeSettingsView: View {
     @ViewBuilder
     private var diagnosticsRows: some View {
         if let diagnostics {
-            LabeledContent("Helper", value: diagnostics.helperInstalled ? "Installed" : "Not installed")
+            LabeledContent("Helper", value: diagnostics.helperInstalled ? "Ready" : "Needs repair")
             LabeledContent("SleepDisabled", value: diagnostics.sleepDisabled ? "On" : "Off")
             LabeledContent("Lid", value: optionalBoolText(diagnostics.lidClosed, trueText: "Closed", falseText: "Open"))
             LabeledContent("Battery", value: diagnostics.batteryPercent.map { "\($0)%" } ?? "Unknown")
