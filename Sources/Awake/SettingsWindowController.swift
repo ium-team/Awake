@@ -179,20 +179,41 @@ private struct AwakeSettingsView: View {
     var body: some View {
         let l10n = L10n(language: appLanguage)
 
-        Form {
-            Section(l10n.text(.general)) {
-                Picker(l10n.text(.language), selection: $appLanguage) {
+        VStack(spacing: 14) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(l10n.text(.language))
+                        .font(.headline)
+                    Text(l10n.text(.languagePickerDescription))
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                }
+
+                Spacer()
+
+                Picker("", selection: $appLanguage) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(l10n.languageDisplayName(language)).tag(language)
                     }
                 }
+                .labelsHidden()
+                .frame(width: 190)
                 .onChange(of: appLanguage) { newValue in
-                    var settings = settingsStore.settings
-                    settings.appLanguage = newValue
-                    settingsStore.settings = settings
-                    onLanguageChanged()
+                    updateLanguage(newValue)
                 }
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 1)
+            )
 
+            Form {
+                Section(l10n.text(.general)) {
                 Toggle(l10n.text(.keepMacAwakeWhenLidClosed), isOn: $forceLidClosedAwake)
                     .onChange(of: forceLidClosedAwake) { newValue in
                         var settings = settingsStore.settings
@@ -300,7 +321,8 @@ private struct AwakeSettingsView: View {
                 }
             }
         }
-        .formStyle(.grouped)
+            .formStyle(.grouped)
+        }
         .padding(20)
         .frame(minWidth: 600, minHeight: 560)
     }
@@ -331,6 +353,13 @@ private struct AwakeSettingsView: View {
             launchAtLogin = loginItemController.isEnabled
             onLoginItemError(error)
         }
+    }
+
+    private func updateLanguage(_ language: AppLanguage) {
+        var settings = settingsStore.settings
+        settings.appLanguage = language
+        settingsStore.settings = settings
+        onLanguageChanged()
     }
 
     private func refreshDiagnostics() {

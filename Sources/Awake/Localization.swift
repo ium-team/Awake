@@ -80,6 +80,7 @@ struct L10n {
         case couldNotUpdateLidClosedHelper
         case general
         case language
+        case languagePickerDescription
         case languageSystem
         case languageKorean
         case languageChinese
@@ -151,6 +152,7 @@ struct L10n {
             "couldNotUpdateLidClosedHelper": "Could not update lid-closed helper",
             "general": "General",
             "language": "Language",
+            "languagePickerDescription": "Default follows your macOS language.",
             "languageSystem": "System Default",
             "languageKorean": "Korean",
             "languageChinese": "Chinese",
@@ -220,6 +222,7 @@ struct L10n {
             "couldNotUpdateLidClosedHelper": "덮개 닫힘 헬퍼를 업데이트할 수 없음",
             "general": "일반",
             "language": "언어",
+            "languagePickerDescription": "기본값은 macOS 언어 설정을 따릅니다.",
             "languageSystem": "시스템 기본값",
             "languageKorean": "한국어",
             "languageChinese": "중국어",
@@ -289,6 +292,7 @@ struct L10n {
             "couldNotUpdateLidClosedHelper": "无法更新合盖辅助程序",
             "general": "通用",
             "language": "语言",
+            "languagePickerDescription": "默认跟随 macOS 语言设置。",
             "languageSystem": "系统默认",
             "languageKorean": "韩语",
             "languageChinese": "中文",
@@ -358,6 +362,7 @@ struct L10n {
             "couldNotUpdateLidClosedHelper": "蓋閉じヘルパーを更新できません",
             "general": "一般",
             "language": "言語",
+            "languagePickerDescription": "デフォルトでは macOS の言語設定に従います。",
             "languageSystem": "システムデフォルト",
             "languageKorean": "韓国語",
             "languageChinese": "中国語",
