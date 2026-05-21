@@ -14,7 +14,7 @@ final class SettingsWindowController: NSWindowController {
         self.loginItemController = loginItemController
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 380),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -44,40 +44,32 @@ final class SettingsWindowController: NSWindowController {
 
         let stack = NSStackView()
         stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 28
+        stack.alignment = .width
+        stack.spacing = 18
         stack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(stack)
 
-        let sessionSection = makeSection(
-            title: "Session",
-            rows: [
+        stack.addArrangedSubview(makeHeader())
+        stack.addArrangedSubview(
+            makeTogglePanel(rows: [
                 makeToggleRow(
-                    title: "Prevent display sleep",
-                    subtitle: "Keep the screen on while selected apps are running.",
+                    title: "Keep the display awake",
+                    subtitle: "Adds display sleep prevention to active protection sessions.",
                     toggle: preventDisplaySleepSwitch
                 ),
                 makeToggleRow(
-                    title: "Notify when Awake stops",
-                    subtitle: "Show a notification after all selected apps finish.",
+                    title: "Completion notifications",
+                    subtitle: "Notify when all selected apps finish and Awake releases protection.",
                     toggle: completionNotificationSwitch
-                )
-            ]
-        )
-
-        let autoRunSection = makeSection(
-            title: "Auto Run",
-            rows: [
+                ),
                 makeToggleRow(
-                    title: "Launch Awake at login",
-                    subtitle: "Start the menu bar app automatically after you sign in.",
+                    title: "Open at login",
+                    subtitle: "Start Awake as a menu bar app when you sign in.",
                     toggle: launchAtLoginSwitch
                 )
-            ]
+            ])
         )
-
-        stack.addArrangedSubview(sessionSection)
-        stack.addArrangedSubview(autoRunSection)
+        stack.addArrangedSubview(makeFooterNote())
 
         preventDisplaySleepSwitch.target = self
         preventDisplaySleepSwitch.action = #selector(saveSettings)
@@ -87,49 +79,62 @@ final class SettingsWindowController: NSWindowController {
         launchAtLoginSwitch.action = #selector(launchAtLoginChanged)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -18),
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 22),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -18)
+            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -20)
         ])
     }
 
-    private func makeSection(title: String, rows: [NSView]) -> NSView {
+    private func makeHeader() -> NSView {
         let container = NSStackView()
         container.orientation = .vertical
         container.alignment = .leading
-        container.spacing = 10
+        container.spacing = 6
         container.translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = NSTextField(labelWithString: title)
-        titleLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        let titleLabel = NSTextField(labelWithString: "Settings")
+        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
         titleLabel.textColor = .labelColor
 
-        let card = NSStackView()
-        card.orientation = .vertical
-        card.alignment = .leading
-        card.spacing = 0
-        card.wantsLayer = true
-        card.layer?.cornerRadius = 8
-        card.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-        card.translatesAutoresizingMaskIntoConstraints = false
-
-        for (index, row) in rows.enumerated() {
-            card.addArrangedSubview(row)
-            if index < rows.count - 1 {
-                card.addArrangedSubview(makeDivider())
-            }
-        }
+        let subtitleLabel = NSTextField(labelWithString: "Choose how Awake behaves while a protection session is active.")
+        subtitleLabel.font = .systemFont(ofSize: 13)
+        subtitleLabel.textColor = .secondaryLabelColor
+        subtitleLabel.lineBreakMode = .byWordWrapping
+        subtitleLabel.maximumNumberOfLines = 2
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         container.addArrangedSubview(titleLabel)
-        container.addArrangedSubview(card)
+        container.addArrangedSubview(subtitleLabel)
 
         NSLayoutConstraint.activate([
-            container.widthAnchor.constraint(equalToConstant: 484),
-            card.widthAnchor.constraint(equalTo: container.widthAnchor)
+            subtitleLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor)
         ])
 
         return container
+    }
+
+    private func makeTogglePanel(rows: [NSView]) -> NSView {
+        let panel = NSStackView()
+        panel.orientation = .vertical
+        panel.alignment = .width
+        panel.spacing = 0
+        panel.edgeInsets = NSEdgeInsets(top: 6, left: 0, bottom: 6, right: 0)
+        panel.wantsLayer = true
+        panel.layer?.cornerRadius = 10
+        panel.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        panel.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.55).cgColor
+        panel.layer?.borderWidth = 1
+        panel.translatesAutoresizingMaskIntoConstraints = false
+
+        for (index, row) in rows.enumerated() {
+            panel.addArrangedSubview(row)
+            if index < rows.count - 1 {
+                panel.addArrangedSubview(makeDivider())
+            }
+        }
+
+        return panel
     }
 
     private func makeToggleRow(title: String, subtitle: String, toggle: NSSwitch) -> NSView {
@@ -137,37 +142,39 @@ final class SettingsWindowController: NSWindowController {
         row.translatesAutoresizingMaskIntoConstraints = false
 
         let titleLabel = NSTextField(labelWithString: title)
-        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let subtitleLabel = NSTextField(labelWithString: subtitle)
-        subtitleLabel.font = .systemFont(ofSize: 11)
+        subtitleLabel.font = .systemFont(ofSize: 12)
         subtitleLabel.textColor = .secondaryLabelColor
-        subtitleLabel.lineBreakMode = .byTruncatingTail
+        subtitleLabel.lineBreakMode = .byWordWrapping
+        subtitleLabel.maximumNumberOfLines = 2
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         toggle.translatesAutoresizingMaskIntoConstraints = false
+        toggle.setContentHuggingPriority(.required, for: .horizontal)
+        toggle.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         row.addSubview(titleLabel)
         row.addSubview(subtitleLabel)
         row.addSubview(toggle)
 
         NSLayoutConstraint.activate([
-            row.heightAnchor.constraint(equalToConstant: 62),
+            row.heightAnchor.constraint(greaterThanOrEqualToConstant: 72),
 
-            titleLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 14),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -16),
-            titleLabel.topAnchor.constraint(equalTo: row.topAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 18),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -18),
+            titleLabel.topAnchor.constraint(equalTo: row.topAnchor, constant: 15),
 
             subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            subtitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -16),
+            subtitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: toggle.leadingAnchor, constant: -18),
             subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            subtitleLabel.bottomAnchor.constraint(lessThanOrEqualTo: row.bottomAnchor, constant: -14),
 
-            toggle.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -14),
-            toggle.centerYAnchor.constraint(equalTo: row.centerYAnchor),
-
-            row.widthAnchor.constraint(equalToConstant: 484)
+            toggle.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -18),
+            toggle.centerYAnchor.constraint(equalTo: row.centerYAnchor)
         ])
 
         return row
@@ -178,10 +185,21 @@ final class SettingsWindowController: NSWindowController {
         divider.boxType = .separator
         divider.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            divider.heightAnchor.constraint(equalToConstant: 1),
-            divider.widthAnchor.constraint(equalToConstant: 456)
+            divider.heightAnchor.constraint(equalToConstant: 1)
         ])
         return divider
+    }
+
+    private func makeFooterNote() -> NSView {
+        let label = NSTextField(
+            labelWithString: "Awake prevents normal idle sleep during active sessions. Lid-close behavior can still vary by Mac, power, display, and managed device policy."
+        )
+        label.font = .systemFont(ofSize: 12)
+        label.textColor = .tertiaryLabelColor
+        label.lineBreakMode = .byWordWrapping
+        label.maximumNumberOfLines = 3
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }
 
     private func loadSettings() {
