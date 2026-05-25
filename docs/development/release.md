@@ -33,11 +33,9 @@ Artifacts:
 - `dist/Awake-0.1.0.zip`: versioned archive
 - `dist/checksums.txt`: SHA-256 checksums
 
-The DMG contains `Awake.app` and an `Applications` shortcut so users can install by dragging the app into Applications. The release script also applies a Finder icon-view layout with a background image, fixed icon positions, and hidden toolbar/status bar so the mounted image opens like a normal drag-to-install macOS DMG.
+The DMG contains `Awake.app` and an `Applications` shortcut so users can install by dragging the app into Applications. It uses a checked-in Finder icon-view layout with fixed icon positions, a native background color, and hidden toolbar/status bar. Packaging does not depend on GUI scripting, so local builds and GitHub Actions create the same installer view.
 
-If Finder scripting is unavailable in a headless build environment, packaging continues and logs a warning. In that fallback case the DMG is still installable, but the Finder layout may not be decorated.
-
-The DMG uses a hidden `.background` folder for the install artwork, and macOS may create `.fseventsd` on the mounted image. Users who have Finder hidden-file display enabled can still reveal those folders; the package layout moves them outside the default installer window so the normal first view contains only `Awake.app` and `Applications`.
+The DMG is created from an unmounted staging folder instead of a writable mounted disk image. This prevents packaging-time `.background` or `.fseventsd` support folders from being included. The packaging script mounts the finished image read-only and fails if any visible root item besides `Awake.app` and `Applications` is present.
 
 ## Create a GitHub Release Locally
 
