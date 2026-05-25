@@ -86,7 +86,7 @@ scripts/package-release.sh 0.1.0
 GitHub Releases용 고정 다운로드 URL:
 
 ```text
-https://github.com/ium-team/Awake/releases/latest/download/Awake.zip
+https://github.com/ium-team/Awake/releases/latest/download/Awake.dmg
 ```
 
 기본 단축키:

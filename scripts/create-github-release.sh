@@ -45,11 +45,13 @@ cat > "$NOTES_FILE" <<NOTES
 Awake $VERSION
 
 Download:
-- Awake.zip: stable asset name for website links
+- Awake.dmg: stable asset name for website links and normal macOS installation
+- Awake-$VERSION.dmg: versioned disk image
+- Awake.zip: stable archive for advanced/manual installs
 - Awake-$VERSION.zip: versioned archive
 
 Website latest-download URL:
-https://github.com/ium-team/Awake/releases/latest/download/Awake.zip
+https://github.com/ium-team/Awake/releases/latest/download/Awake.dmg
 NOTES
 
 FLAGS=()
@@ -60,6 +62,8 @@ case "$RELEASE_MODE" in
 esac
 
 gh release create "$TAG" \
+  dist/Awake.dmg \
+  "dist/Awake-$VERSION.dmg" \
   dist/Awake.zip \
   "dist/Awake-$VERSION.zip" \
   dist/checksums.txt \

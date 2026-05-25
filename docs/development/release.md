@@ -7,12 +7,13 @@ Awake distributes public builds through GitHub Releases. The website should link
 Use this URL for the main download button:
 
 ```text
-https://github.com/ium-team/Awake/releases/latest/download/Awake.zip
+https://github.com/ium-team/Awake/releases/latest/download/Awake.dmg
 ```
 
-A versioned asset is also uploaded for each release:
+Versioned assets are also uploaded for each release:
 
 ```text
+https://github.com/ium-team/Awake/releases/download/v0.1.0/Awake-0.1.0.dmg
 https://github.com/ium-team/Awake/releases/download/v0.1.0/Awake-0.1.0.zip
 ```
 
@@ -26,9 +27,15 @@ scripts/package-release.sh 0.1.0
 
 Artifacts:
 
-- `dist/Awake.zip`: stable filename for website links
+- `dist/Awake.dmg`: stable filename for website links and normal macOS installation
+- `dist/Awake-0.1.0.dmg`: versioned disk image
+- `dist/Awake.zip`: stable archive for advanced/manual installs
 - `dist/Awake-0.1.0.zip`: versioned archive
 - `dist/checksums.txt`: SHA-256 checksums
+
+The DMG contains `Awake.app` and an `Applications` shortcut so users can install by dragging the app into Applications. The release script also applies a Finder icon-view layout with a background image, fixed icon positions, and hidden toolbar/status bar so the mounted image opens like a normal drag-to-install macOS DMG.
+
+If Finder scripting is unavailable in a headless build environment, packaging continues and logs a warning. In that fallback case the DMG is still installable, but the Finder layout may not be decorated.
 
 ## Create a GitHub Release Locally
 

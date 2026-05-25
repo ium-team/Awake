@@ -57,11 +57,13 @@ jobs:
           Awake ${{ inputs.version }}
 
           Download:
-          - Awake.zip: stable asset name for website links
+          - Awake.dmg: stable asset name for website links and normal macOS installation
+          - Awake-${{ inputs.version }}.dmg: versioned disk image
+          - Awake.zip: stable archive for advanced/manual installs
           - Awake-${{ inputs.version }}.zip: versioned archive
 
           Website latest-download URL:
-          https://github.com/ium-team/Awake/releases/latest/download/Awake.zip
+          https://github.com/ium-team/Awake/releases/latest/download/Awake.dmg
 
           Note: This workflow build is ad-hoc signed unless Developer ID signing and notarization are configured separately.
           NOTES
@@ -74,6 +76,8 @@ jobs:
           esac
 
           gh release create "$tag" \
+            dist/Awake.dmg \
+            "dist/Awake-${{ inputs.version }}.dmg" \
             dist/Awake.zip \
             "dist/Awake-${{ inputs.version }}.zip" \
             dist/checksums.txt \
