@@ -37,6 +37,8 @@ The DMG contains `Awake.app` and an `Applications` shortcut so users can install
 
 If Finder scripting is unavailable in a headless build environment, packaging continues and logs a warning. In that fallback case the DMG is still installable, but the Finder layout may not be decorated.
 
+The DMG uses a hidden `.background` folder for the install artwork, and macOS may create `.fseventsd` on the mounted image. Users who have Finder hidden-file display enabled can still reveal those folders; the package layout moves them outside the default installer window so the normal first view contains only `Awake.app` and `Applications`.
+
 ## Create a GitHub Release Locally
 
 Create a draft release:

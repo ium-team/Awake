@@ -102,6 +102,12 @@ tell application "Finder"
   set background picture of viewOptions to backgroundImage
   set position of item "$APP_NAME.app" of volumeRoot to {170, 230}
   set position of item "Applications" of volumeRoot to {490, 230}
+  try
+    set position of item "$DMG_BACKGROUND_DIR" of volumeRoot to {2200, 1800}
+  end try
+  try
+    set position of item ".fseventsd" of volumeRoot to {2400, 1800}
+  end try
   update volumeRoot without registering applications
   delay 2
   try
